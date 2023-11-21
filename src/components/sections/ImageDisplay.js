@@ -17,7 +17,7 @@ function ImageDisplay({ imageId }) {
   return (
     <div>
       {imageURL && (
-        <img src={imageURL} alt={`Image with ID ${imageId}`} style={{ width: '100%', height: 'auto' }}/>
+        <img src={imageURL} alt={`Image with ID ${imageId}`} style={{ width: '100%', height: '100%' }}/>
       )}
     </div>
   );

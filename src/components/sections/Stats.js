@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Table, Thead, Tbody, Tr, Th, Td, Link } from '@chakra-ui/react';
+import { Container, Table, Thead, Tbody, Tr, Th, Td, Link, Button, Stack } from '@chakra-ui/react';
 import API_ENDPOINT from '../../config';
 
 const Stats = () => {
   const [userStats, setUserStats] = useState([]);
   const [courseTitles, setCourseTitles] = useState({});
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     const userId = localStorage.getItem('userId');
@@ -41,30 +42,52 @@ const Stats = () => {
     fetchAllCourseInfo();
   }, [userStats]);
 
+  const handleFilter = (newFilter) => {
+    setFilter(newFilter);
+  };
+
+  const totalTests = userStats.length;
+  const completedTests = userStats.filter((stat) => stat.result >= 50).length;
+  const failedTests = userStats.filter((stat) => stat.result < 50).length;
+
   return (
     <Container maxW="7xl" p={{ base: 5, md: 10 }}>
+      <Stack direction={['column', 'row']} spacing='24px'>
+        <Button onClick={() => handleFilter('all')} variant="link" colorScheme='black' size='lg'>
+          Total Tests: {totalTests}
+        </Button>
+        <Button onClick={() => handleFilter('completed')} variant="link" colorScheme='green' size='lg'>
+          Completed Tests: {completedTests}
+        </Button>
+        <Button onClick={() => handleFilter('failed')} variant="link" colorScheme='red' size='lg'>
+          Failed Tests: {failedTests}
+        </Button>
+      </Stack>
       <Table variant="simple">
         <Thead>
           <Tr>
             <Th>Course Title</Th>
             <Th>Result</Th>
-            <Th>Action</Th>
           </Tr>
         </Thead>
         <Tbody>
-          {userStats.map((stat) => (
-            <Tr key={stat.id}>
-              <Td fontWeight="extrabold" fontSize="x-large">
-                {courseTitles[stat.cid] || 'Loading...'}
-              </Td>
-              <Td>
-                <span style={{ color: stat.result >= 50 ? 'green' : 'red' }}>
-                  {stat.result}% ({stat.result >= 50 ? 'Completed' : 'Failed'})
-                </span>
-              </Td>
-              <Td> <Link href={`/course/${stat.cid}`}>Retry</Link> </Td>
-            </Tr>
-          ))}
+          {userStats
+            .filter((stat) => {
+              if (filter === 'all') return true;
+              return filter === 'completed' ? stat.result >= 50 : stat.result < 50;
+            })
+            .map((stat) => (
+              <Tr key={stat.id}>
+                <Td fontWeight="extrabold" fontSize="x-large">
+                  <Link href={`/course/${stat.cid}`}>{courseTitles[stat.cid] || 'Loading...'}</Link>
+                </Td>
+                <Td>
+                  <span style={{ color: stat.result >= 50 ? 'green' : 'red' }}>
+                    {stat.result}% ({stat.result >= 50 ? 'Completed' : 'Failed'})
+                  </span>
+                </Td>
+              </Tr>
+            ))}
         </Tbody>
       </Table>
     </Container>
