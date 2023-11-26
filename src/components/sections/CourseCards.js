@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Box, SimpleGrid, Container, Link, Text, Badge, Select } from '@chakra-ui/react';
+import { Box, SimpleGrid, Container, Link, Text, Badge, Select, Spinner, Button } from '@chakra-ui/react';
+import checkCoursesAndStatistics from './checkCourses';
 import API_ENDPOINT from '../../config';
 
 const CourseCards = ({ searchTerm, selectedCategoryId, userStats, percentage }) => {
   const [data, setData] = useState(null);
   const [filterOption, setFilterOption] = useState('all');
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [coursesCompleted, setCoursesCompleted] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
         const response = await fetch(`${API_ENDPOINT}/courses/getByCategory/${selectedCategoryId}`);
         const res = await response.json();
 
@@ -22,11 +26,25 @@ const CourseCards = ({ searchTerm, selectedCategoryId, userStats, percentage }) 
 
           console.log('filteredData:', filteredData);
 
-          const updatedData = filteredData.map((course) => ({
-            ...course,
-            isCompleted: userStats.some((stat) => stat.cid === course.id && stat.result >= 50),
-            hasFailed: userStats.some((stat) => stat.cid === course.id && stat.result < 50),
-          }));
+          const userId = localStorage.getItem("userId");
+
+          const completed = await checkCoursesAndStatistics(selectedCategoryId, userId);
+          setCoursesCompleted(completed);
+          let updatedData;
+          if (completed) {
+            updatedData = filteredData.map((course) => ({
+              ...course,
+              isCompleted: true,
+              hasFailed: false
+            }));
+          }
+          else {
+            updatedData = filteredData.map((course) => ({
+              ...course,
+              isCompleted: userStats.some((stat) => stat.cid === course.id && stat.result >= 50),
+              hasFailed: userStats.some((stat) => stat.cid === course.id && stat.result < 50),
+            }));
+          }
 
           setData(updatedData);
         } else {
@@ -36,6 +54,9 @@ const CourseCards = ({ searchTerm, selectedCategoryId, userStats, percentage }) 
         console.error(error);
         setError('An error occurred while fetching data');
       }
+      finally {
+        setLoading(false);
+      }
     };
 
     if (selectedCategoryId) {
@@ -43,19 +64,27 @@ const CourseCards = ({ searchTerm, selectedCategoryId, userStats, percentage }) 
     }
   }, [searchTerm, selectedCategoryId, userStats, percentage]);
 
+  if (loading) {
+    return (
+      <Container maxWidth="1200px" mx="auto" my="unset" p={10} textAlign="center">
+        <Spinner size="xl" />
+      </Container>
+    );
+  }
+
   const filteredCourses = data
     ? data.filter((course) => {
-        switch (filterOption) {
-          case 'completed':
-            return course.isCompleted;
-          case 'failed':
-            return course.hasFailed;
-          case 'notDone':
-            return !course.isCompleted && !course.hasFailed;
-          default:
-            return true;
-        }
-      })
+      switch (filterOption) {
+        case 'completed':
+          return course.isCompleted;
+        case 'failed':
+          return course.hasFailed;
+        case 'notDone':
+          return !course.isCompleted && !course.hasFailed;
+        default:
+          return true;
+      }
+    })
     : [];
 
   return (
@@ -125,6 +154,25 @@ const CourseCards = ({ searchTerm, selectedCategoryId, userStats, percentage }) 
           </Box>
         ))}
       </SimpleGrid>
+      {coursesCompleted && (
+        <Link href={`/certificate/${selectedCategoryId}`}>
+          <Button
+            rounded={'none'}
+            w={'full'}
+            mt={8}
+            size={'lg'}
+            py={'7'}
+            textTransform={'uppercase'}
+            _hover={{
+              transform: 'translateY(2px)',
+              boxShadow: 'lg',
+            }}
+            colorScheme='green'
+          >
+            Get Certificate
+          </Button>
+        </Link>
+      )}
     </Container>
   );
 };

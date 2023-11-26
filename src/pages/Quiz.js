@@ -7,12 +7,13 @@ import {
     Button,
     VStack,
     Text,
+    useToast,
 } from "@chakra-ui/react";
 import MainLayout from "../components/layouts/MainLayout";
-import { useParams } from 'react-router-dom';
-import API_ENDPOINT from '../config';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../components/sections/AuthContext';
+import { useParams } from "react-router-dom";
+import API_ENDPOINT from "../config";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../components/sections/AuthContext";
 
 const Quiz = () => {
     const { id } = useParams();
@@ -24,6 +25,7 @@ const Quiz = () => {
     const [questions, setQuestions] = useState([]);
     const navigate = useNavigate();
     const { isLoggedIn } = useAuth();
+    const toast = useToast();
 
     useEffect(() => {
         if (!isLoggedIn) {
@@ -89,9 +91,9 @@ const Quiz = () => {
 
     const handleNextQuestion = async () => {
         const currentTest = questions[currentQuestion];
+        const isCorrect = answers[currentQuestion] === currentTest?.answer;
 
-        setScore((prevScore) => prevScore + (answers[currentQuestion] === currentTest?.answer ? 1 : 0));
-        console.log(score);
+        setScore((prevScore) => prevScore + (isCorrect ? 1 : 0));
 
         if (currentQuestion + 1 < questions.length) {
             setCurrentQuestion(currentQuestion + 1);
@@ -100,12 +102,18 @@ const Quiz = () => {
 
             const totalQuestions = questions.length;
             const correctAnswers = score;
-            const calc = (correctAnswers / totalQuestions) * 100
+            const calc = (correctAnswers / totalQuestions) * 100;
             setPercentage(calc);
-            console.log("total questions:", totalQuestions);
-            console.log("correct answers:", correctAnswers);
-            console.log("Quiz Percentage:", calc);
         }
+
+        toast({
+            position: 'top',
+            title: isCorrect ? "Correct!" : "Wrong.",
+            description: isCorrect ? "Well done!" : "Better luck next time.",
+            status: isCorrect ? "success" : "error",
+            duration: 2000, // 2 seconds
+            isClosable: true,
+        });
     };
 
     return (

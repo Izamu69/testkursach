@@ -9,6 +9,7 @@ import Profile from "./pages/Profile";
 import CourseDetails from "./pages/CourseDetails";
 import Quiz from "./pages/Quiz";
 import CategoryPage from "./pages/CategoryPage";
+import CertificateGenerator from "./components/sections/CertificateGenerator";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/course/:id" element={<CourseDetails />} />
         <Route path="/quiz/:id" element={<Quiz />} />
         <Route path="/category/:categoryId" element={<CategoryPage />} />
+        <Route path="/certificate/:id" element={<CertificateGenerator />} />
       </Routes>
     </Router>
   );

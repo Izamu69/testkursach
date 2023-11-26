@@ -24,6 +24,7 @@ export default function CourseDetails() {
     const [isQuizEmpty, setIsQuizEmpty] = useState(false);
     const navigate = useNavigate();
     const { isLoggedIn } = useAuth();
+    const [isButtonDisabled, setIsButtonDisabled] = useState(false);
 
     useEffect(() => {
         if (!isLoggedIn) {
@@ -56,6 +57,38 @@ export default function CourseDetails() {
             checkQuizEmpty();
         }
     }, [id, course]);
+
+    useEffect(() => {
+        const checkStats = async () => {
+            try {
+                console.log("Course ID:", id);
+                const userId = localStorage.getItem('userId');
+                const response = await fetch(`${API_ENDPOINT}/statistics/getStatistic/${userId}`);
+                const data = await response.json();
+
+                console.log("User Stats:", data.message);
+
+                // Find the stat with the same course ID (using cid)
+                const matchingStat = data.message.find((stat) => stat.cid == id); // Use '==' for loose comparison
+
+                console.log("Matching Stat:", matchingStat);
+
+                if (matchingStat) {
+                    // Check if createdAt and updatedAt are different
+                    if (matchingStat.createdAt !== matchingStat.updatedAt) {
+                        setIsButtonDisabled(true);
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking user stats:', error);
+            }
+        };
+
+        if (id) {
+            checkStats();
+        }
+    }, [id]);
+
 
     const renderVideos = (videos) => {
         return (
@@ -137,6 +170,7 @@ export default function CourseDetails() {
                                 {!isQuizEmpty && (
                                     <Link href={`/quiz/${course.id}`}>
                                         <Button
+                                            isDisabled={isButtonDisabled}
                                             rounded={'none'}
                                             w={'full'}
                                             mt={8}
@@ -149,7 +183,7 @@ export default function CourseDetails() {
                                             }}
                                             colorScheme='green'
                                         >
-                                            Complete test
+                                            {isButtonDisabled ? 'You can\'t retake this test anymore' : 'Complete test'}
                                         </Button>
                                     </Link>
                                 )}
